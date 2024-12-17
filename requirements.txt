@@ -1,0 +1,8 @@
+gTTS
+SpeechRecognition
+playsound
+requests
+winshell
+pygame
+pyaudio
+Pillow
