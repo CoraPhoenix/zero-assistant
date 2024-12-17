@@ -23,13 +23,13 @@ The layout is composed by an animated image which changes states depending on if
 
 Below is an example of a chat interaction:
 
-**image 1**
+![chat_interaction_example](screen_img/test_chat.gif)
 
 To activate commands, you need to start your text or audio with "Zero," so that she can differentiate your intention.
 
 Here is an example of command activation:
 
-**image 2**
+![chat_command_example](screen_img/test_command.gif)
 
 ## Known Issues
 
