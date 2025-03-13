@@ -1,8 +1,9 @@
 import tkinter as tk
 from tkinter import ttk
 from PIL import Image, ImageTk, ImageSequence
+from mutagen.mp3 import MP3
 from chat.chat import chat
-from utils.startup import initial_load
+from utils.startup import initial_load, start_calendar_service
 from utils.funcs import *
 from utils.speech import *
 from config.config import ZeroConfig
@@ -21,23 +22,23 @@ class ZeroAssistant:
 
     Parameters:
 
-    active_frame_duration : holds the duration of each frame belonging to one of the animations (active state)
-    active_frames : holds a collection of frames related to one of the animations (active state)
-    bot_answer : the answer given by Zero, which is either set by a rule or generated through a langauge model
-    command_type : the type of command given by the user; it selects the command to be triggered
-    gif: the Tkinter widget holding the animation
-    inactive : a flag which alternates the animation between inactive and active states
-    inactive_frame_duration : holds the duration of each frame belonging to one of the animations (inactive state)
-    inactive_frames : holds a collection of frames related to one of the animations (inactive state)
-    initial_speech : used to trigger Zero's TTS when the class is initialised
-    speaking_duration : the amount of time Zero will be speaking; used to indicate when the animation should change states
-    user_command : a user input used to activate commands
-    user_input : a given user input in the text box
-    window : the Tkinter window object, which holds the GUI
+        active_frame_durations (list) : holds the duration of each frame belonging to one of the animations (active state)
+        active_frames (list) : holds a collection of frames related to one of the animations (active state)
+        bot_answer (str) : the answer given by Zero, which is either set by a rule or generated through a langauge model
+        command_caller (utils.funcs.ZeroCommands) : a ZeroCommands object which allows Zero to execute commands
+        command_type (str) : the type of command given by the user; it selects the command to be triggered
+        gif: the Tkinter widget holding the animation
+        inactive (bool) : a flag which alternates the animation between inactive and active states
+        inactive_frame_durations (list) : holds the duration of each frame belonging to one of the animations (inactive state)
+        inactive_frames (list) : holds a collection of frames related to one of the animations (inactive state)
+        initial_speech (str) : used to trigger Zero's TTS when the class is initialised
+        speaking_duration (float) : the amount of time Zero will be speaking; used to indicate when the animation should change states
+        user_input (str) : a given user input in the text box
+        window (tkinter.Tk) : the Tkinter window object, which holds the GUI
 
     Public methods:
 
-    run(self) -> None : opens the GUI and run all functions and commands required by Zero to operate
+        run() -> None : opens the GUI and run all functions and commands required by Zero to operate
 
     """
 
@@ -45,13 +46,19 @@ class ZeroAssistant:
     def __init__(self):
 
         """
-        ZeroAssistant class constructor
+        ZeroAssistant class constructor. Used to initalise variables.
+
+        Parameters:
+            None
+
+        Returned value:
+            None
         """
 
         self.inactive = False
         self.user_input = ""
-        self.user_command = ""
         self.command_type = ""
+        self.command_caller = ZeroCommands()
         self.bot_answer = "Hello! My name is Zero, and I'm your personal assistant. Let's talk!"
         self.speaking_duration = 0
         self.initial_speech = True
@@ -67,7 +74,18 @@ class ZeroAssistant:
 
     # ===================================== public methods ====================================== #
 
-    def run(self):
+    def run(self) -> None:
+
+        """
+        Opens the GUI and run all functions and commands required by Zero to operate.
+
+        Parameters:
+            None
+
+        Returned value:
+            None
+        """
+
         self._open_window()
         self._load_gif()
         self._load_images()
@@ -80,26 +98,40 @@ class ZeroAssistant:
     def _open_window(self) -> None:
 
         """
-        Creates and configures the theme to the GUI window
+        Creates and configures the theme to the GUI window.
 
         Parameters:
-        self : the object reference
+            None
 
         Returned value:
-        None
+            None
         """
 
         # Creating window
         self.window = tk.Tk()
         self.window.title("Zero Assistant")
         self.window.geometry("800x600") # setting window default size
+        logging.info("Zero Assistant window is created.")
 
         # Setting up theme
         style = ttk.Style(self.window)
         self.window.tk.call('source', ZeroConfig.TTK_THEME_FILE)
         style.theme_use(ZeroConfig.TTK_THEME)
+        logging.info("Zero Assistant window is configured")
 
-    def _load_gif_frames(self, animated_gif, frame_list, frame_durations):
+    def _load_gif_frames(self, animated_gif, frame_list, frame_durations) -> None:
+
+        """
+        Loads the gif frames into a list, and the duration of each frame to another.
+
+        Parameters:
+            animated_gif : the gif to be loaded.
+            frame_list (list) : the list which will contain the frames.
+            frame_durations (list) : the list to store the duration of each frame.
+
+        Returned value:
+            None
+        """
 
         for frame in ImageSequence.Iterator(animated_gif):
             frame_list.append(ImageTk.PhotoImage(frame.copy()))
@@ -109,13 +141,13 @@ class ZeroAssistant:
     def _load_gif(self) -> None:
         
         """
-        Loads the animated images and display them on the GUI window
+        Loads the animated images and display them on the GUI window.
 
         Parameters:
-        self : the object reference
+            None
 
         Returned value:
-        None
+            None
         """
 
         # getting images
@@ -137,22 +169,24 @@ class ZeroAssistant:
             self.gif = ttk.Label(self.window, image = self.active_frames[0], anchor=tk.CENTER, background= ZeroConfig.BACKGROUND_COLOUR)
             self.gif.image = self.active_frames[0]
         self.gif.grid(row=0, column=0, columnspan=4, sticky="nsew")
+        logging.info("Animated GIF is loaded.")
 
     def _load_images(self) -> None:
 
         """
-        Loads the non-animated images
+        Loads the non-animated images.
 
         Parameters:
-        self : the object reference
+            None
 
         Returned value:
-        None
+            None
         """
-
+        # Opening images
         mic = Image.open(ZeroConfig.MICROPHONE_PATH)
         send = Image.open(ZeroConfig.SEND_ICON_PATH)
 
+        # Loading images to be added to buttons
         self.mic_img = ImageTk.PhotoImage(mic)
         self.send_img = ImageTk.PhotoImage(send)
 
@@ -160,13 +194,13 @@ class ZeroAssistant:
     def _load_widgets(self) -> None:
 
         """
-        Creates the GUI widgets and display them on the window
+        Creates the GUI widgets and display them on the window.
 
         Parameters:
-        self : the object reference
+            None
 
         Returned value:
-        None
+            None
         """
 
         # Zero label
@@ -174,8 +208,11 @@ class ZeroAssistant:
         self.zero_label.grid(row=1, column=0, padx=10, pady=1)  # placed at first row and column
 
         # Zero text
-        self.zero_text = ttk.Label(self.window, text = self.bot_answer, background=ZeroConfig.ZERO_BG_COLOUR, font=ZeroConfig.ZERO_FONT)
-        self.zero_text.grid(row=1, column=1, sticky="nsew", columnspan=3, padx=10)
+        #self.zero_text = ttk.Label(self.window, text = self.bot_answer, background=ZeroConfig.ZERO_BG_COLOUR, font=ZeroConfig.ZERO_FONT)
+        self.zero_text = tk.Text(self.window, height = 5, state=tk.DISABLED, background=ZeroConfig.ZERO_BG_COLOUR, font=ZeroConfig.ZERO_FONT)
+        self.zero_text.grid(row=1, column=1, sticky="nsew", columnspan=2, padx=10)
+        self.zero_text_scroll = ttk.Scrollbar(self.window, orient=tk.VERTICAL, command=self.zero_text.yview)
+        self.zero_text_scroll.grid(row=1, column=3, sticky="nsew", padx=10)
 
         # User label
         self.user_label = ttk.Label(self.window, text="User: ", width = 6, background= ZeroConfig.BACKGROUND_COLOUR, font=ZeroConfig.LABEL_FONT)
@@ -192,17 +229,18 @@ class ZeroAssistant:
 
         self.text_button = ttk.Button(self.window, text="Send", image=self.send_img, command=self._send_input)
         self.text_button.grid(row=2, column=3, padx=10, pady=10)
+        logging.info("Widgets loaded successfully.")
     
     def _configure_window(self) -> None:
 
         """
-        Configures window and widgets parameters, as well as calling event functions
+        Configures window and widgets parameters, as well as calling event functions.
 
         Parameters:
-        self : the object reference
+            None
 
         Returned value:
-        None
+            None
         """
 
         ## --------------------- window configuration ---------------------- ##
@@ -216,19 +254,26 @@ class ZeroAssistant:
         self.window.columnconfigure(1, weight=1)  # Allow the text boxes to stretch horizontally
         self.window.configure(bg=ZeroConfig.BACKGROUND_COLOUR)
 
+        self.zero_text.config(yscrollcommand=self.zero_text_scroll.set)
+        self.zero_text.config(state=tk.NORMAL)
+        self.zero_text.insert(tk.END, self.bot_answer)
+        self.zero_text.config(state=tk.DISABLED)
+        logging.info("Windows elements are set.")
+
         self.zero_text.bind("<Configure>", self._resize_text)
         self.user_text.bind("<Return>", self._on_pressing_enter)
+        logging.info("Widget actions are set.")
 
     def _window_mainloop(self) -> None:
 
         """
-        Calls the main functions, including the mainloop() function
+        Calls the main functions, including the mainloop() function.
 
         Parameters:
-        self : the object reference
+            None
 
         Returned value:
-        None
+            None
         """
 
         ## ------------------------- main functions ------------------------ ##
@@ -248,14 +293,13 @@ class ZeroAssistant:
     def _animate(self, frame_index : int) -> None:
 
         """
-        Updates the displayed frame of the animated GIF
+        Updates the displayed frame of the animated GIF.
 
         Parameters:
-        self : the object reference
-        frame_index : the index of the animation's frame
+            frame_index : the index of the animation's frame.
 
         Returned value:
-        None
+            None
         """
 
         # updates inactive state GIF if Zero is not speaking
@@ -285,34 +329,37 @@ class ZeroAssistant:
         animations. Also triggers Zero's inital TTS.
 
         Parameters:
-        self : the object reference
+            None
 
         Returned value:
-        None
+            None
         """
 
         # executed when Zero is started
         if self.initial_speech:
             threading.Thread(target=self._perform_tts).start()
             self.initial_speech = False
-            self.speaking_duration = (len(self.bot_answer) / 10)
+            self.speaking_duration = (len(self.bot_answer) / 7)
 
-
+        # When user types or say something, Zero will automatically answer
         if len(self.user_input) > 0:
 
             self.inactive = False
 
-            if self.user_input.lower().startswith("zero,"):
-                self.bot_answer, self.command_type = activate_command(self.user_input.lstrip())
+            if self.user_input.lower().lstrip().startswith("zero,"):
+                self.bot_answer, self.command_type = self.command_caller.activate_command(self.user_input.lstrip())
             else: # Hugging Face bot is called when no command is sent
                 self.bot_answer = chat(self.user_input)
 
             # sets Zero's text to display, user command, triggers TTS, set variables to control animations
-            self.zero_text.config(text=self.bot_answer.lstrip())
-            self.user_command = self.user_input
+            self.zero_text.config(state=tk.NORMAL)
+            self.zero_text.delete("1.0", tk.END)
+            self.zero_text.insert(tk.END, self.bot_answer.lstrip())
+            self.zero_text.config(state=tk.DISABLED)
+            #self.zero_text.config(text=self.bot_answer.lstrip())
             self.user_input = ""
             threading.Thread(target=self._perform_tts).start()
-            self.speaking_duration = (len(self.bot_answer) / 10)
+            self.speaking_duration = (len(self.bot_answer) / 7)
         
         self.window.after(1000, self._answer)
     
@@ -323,40 +370,94 @@ class ZeroAssistant:
         Resizes the text to fit the grid cell.
 
         Parameters:
-        self : the object reference
-        event : the event which triggers the function
+            event : the event which triggers the function.
 
         Returned value:
-        None
+            None
         """
         new_width = event.width
 
         # update the label wrap length with the new window length
-        self.zero_text.config(wraplength=new_width - 15)
+        self.zero_text.config(wrap=tk.WORD)
     
     # ===================================== helper functions ==================================== #
 
     def _execute_command(self) -> None:
 
         """
-        Triggers a command depending on the selected command.
+        Triggers an action depending on the selected command.
 
         Parameters:
-        self : the object reference
+            None
 
         Returned value:
-        None
+            None
         """
         
-        if self.command_type == "open_page":
-            open_page(self.user_command)
-            self.user_command = ""
-        elif self.command_type == "empty_recycle_bin":
-            empty_recycle_bin()
-        elif self.command_type == "start_playlist":
-            start_playlist()
-        elif self.command_type == "stop_playlist":
-            stop_playlist()
+        if "open_page" in self.command_type: # triggers opening web page action
+            self.command_caller.open_page(self.command_type)
+        elif "open_app" in self.command_type: # triggers opening program action
+            try:
+                app_name = re.findall(r"\((.*?)\)", self.command_type)[-1]
+                self.command_caller.open_app(app_name)
+            except Exception as e:
+                logging.error(f"Error while running open_app(): {str(e)}")
+                self.bot_answer = str(e)
+                speak(str(e))
+        elif "close_app" in self.command_type: # triggers closing program action
+            try:
+                command_input = self.command_type
+                app_name = re.findall(r"\((.*?)\)", command_input)[-1]
+                if app_name == "name":
+                    app_name = re.findall(r"e:\s.*", command_input)[-1].replace("e: ", "")
+                self.command_caller.close_app(app_name)
+            except Exception as e:
+                logging.error(f"Error while running close_app(): {str(e)}")
+                self.bot_answer = str(e)
+                speak(str(e))
+        elif "open_folder" in self.command_type: # triggers opening folder action
+            try:
+                command_input = self.command_type
+                folder_name = re.findall(r"\((.*?)\)", command_input)[-1]
+                if folder_name == "folder_name":
+                    folder_name = re.findall(r"e:\s.*", command_input)[-1].replace("e: ", "")
+                self.command_caller.open_folder(folder_name)
+            except Exception as e:
+                logging.error(f"Error while running open_folder(): {str(e)}")
+                self.bot_answer = str(e)
+                speak(str(e))
+        elif "empty_recycle_bin" in self.command_type: # triggers cleaning recycle bin action
+            self.command_caller.empty_recycle_bin()
+        elif "start_playlist" in self.command_type: # triggers playing songs from a playlist action
+            if not "default" in self.command_type:
+                self.command_caller.start_playlist(self.command_type)
+            else:
+                self.command_caller.start_playlist()
+        elif "stop_playlist" in self.command_type: # triggers stopping mixer playlist action
+            self.command_caller.stop_playlist()
+        elif "play_song" in self.command_type: # triggers playing specific song action
+            try:
+                filtered_content = (re.findall(r"\((.*?)\)", self.command_type)[-1]).split("\",")
+                if len(filtered_content) < 2 or len(filtered_content) > 3:
+                    filtered_content = (re.findall(r"s\:(.*)\s", self.command_type)[-1]).split(",")
+                    filtered_content = [item.split("`")[1].replace(" ", "").strip() for item in filtered_content]
+                else:
+                    filtered_content = [item.replace('"', "") for item in filtered_content]
+                name = filtered_content[0].replace("name=", "").strip()
+                artist = filtered_content[1].replace("artist=", "").strip()
+                print(filtered_content)
+                if len(filtered_content) == 3:
+                    self.command_caller.play_song(name, artist, playlist=filtered_content[2].replace("playlist=", "").strip())
+                else:
+                    self.command_caller.play_song(name, artist)
+            except ValueError as ve:
+                self.bot_answer = str(ve)
+                speak(str(ve))
+            except Exception as e:
+                logging.error(f"Error while running play_song(): {str(e)}")
+                self.bot_answer = "Failed to play the song. Please try again."
+                speak("Failed to play the song. Please try again.")
+
 
     def _on_pressing_enter(self, event) -> None:
 
@@ -364,10 +465,10 @@ class ZeroAssistant:
         Triggers the _send_input() function when user presses the Enter key.
 
         Parameters:
-        self : the object reference
+            None
 
         Returned value:
-        None
+            None
         """
 
         self._send_input()
@@ -375,13 +476,13 @@ class ZeroAssistant:
     def _perform_tts(self) -> None:
 
         """
-        Triggers Zero's TTS
+        Triggers Zero's TTS.
 
         Parameters:
-        self : the object reference
+            None
 
         Returned value:
-        None
+            None
         """
 
         speak(self.bot_answer)
@@ -393,10 +494,10 @@ class ZeroAssistant:
         Returns gif to inactive state when Zero stops speaking.
 
         Parameters:
-        self : the object reference
+            None
 
         Returned value:
-        None
+            None
         """
 
         if (self.speaking_duration <= 0):
@@ -412,10 +513,10 @@ class ZeroAssistant:
         Sends user audio input to Zero.
 
         Parameters:
-        self : the object reference
+            None
 
         Returned value:
-        None
+            None
         """
 
         self.user_input = get_audio()
@@ -426,10 +527,10 @@ class ZeroAssistant:
         Sends user input to Zero and clears text box.
 
         Parameters:
-        self : the object reference
+            None
 
         Returned value:
-        None
+            None
         """
         
         self.user_input = self.user_text.get("1.0",'end-1c')
@@ -441,15 +542,15 @@ class ZeroAssistant:
         Creates a thread to allow the execution of commands.
 
         Parameters:
-        self : the object reference
+            None
 
         Returned value:
-        None
+            None
         """
 
         if len(self.command_type) > 0:
             threading.Thread(target=self._execute_command, daemon=True).start()
-            self.command_type = ""
+            self.command_type = "" # resets command_type so that a new thread is not open every second
 
         self.window.after(1000, self._tk_execute_command)
     
@@ -459,10 +560,10 @@ class ZeroAssistant:
         Creates a thread to allow the STT.
 
         Parameters:
-        self : the object reference
+            None
 
         Returned value:
-        None
+            None
         """
 
         threading.Thread(target=self._send_audio, daemon=True).start()
@@ -476,15 +577,16 @@ def main() -> None:
     Zero Assistant's main function, where chat is displayed into a Tkinter interface
 
     Parameters:
-    None
+        None
 
     Returned value:
-    None
+        None
     """
 
     try:
 
-        initial_load()
+        initial_load() # tries to load HuggingFace inference model
+        start_calendar_service() # tries to load Google Calendar API service
 
         zero = ZeroAssistant() # intialises Zero
         zero.run()
