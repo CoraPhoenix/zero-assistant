@@ -3,13 +3,18 @@
 This is a basic virtual assistant which you can interact with through text and voice. \
 Ask Zero to perform some commands and chat with them.
 
+## Overview
+
+This project presents a virtual assistant with graphical interface (GUI), which interacts with the user through text or speech, using Hugging Face models. \
+The environment allows dynamic interactions, having integrated functions which can be activated using natural language.
+
 ## Requirements
 
 To be able to use Zero, it's required to have:
 
-- Python
+- Python (3.10 or higher)
 - Hugging Face API token
-- Installing the libraries in `requirements.txt` (This can be done through `pip install -r requirements.txt`)
+- Installing the libraries in `requirements.txt` 
 - Installing or configuring a Tkinter theme (Go to `themes/readme.txt` for more details)
 
 ## Features
@@ -30,6 +35,20 @@ To activate commands, you need to start your text or audio with "Zero," so that 
 Here is an example of command activation:
 
 ![chat_command_example](screen_img/test_command.gif)
+
+## How to execute the program
+
+In order to execute the project locally, follow the steps below:
+1. Clone the repository using `git clone` or download it as a ZIP file
+2. (Optional) Create a virtual environment (this project is compatible with [Anaconda environments](https://www.anaconda.com/docs/tools/working-with-conda/environments))
+3. Install the libraries listed in the `requirements.txt` file (This can be done through `pip install -r requirements.txt`)
+   - If you're using a virtual environment, make sure to install the libraries inside it
+4. Create a Hugging Face account and API token (check [documentation](https://huggingface.co/docs/hub/security-tokens) for more info)
+5. Create a `.env` file in `chat` folder containing the following line:
+   - `HUGGINGFACE_INFERENCE_TOKEN = "<your token here>"`
+6. Get a [Google Calendar API](https://developers.google.com/workspace/calendar/api/guides/overview?hl=ja) token and put the `credentials.json` file in the `utils` folder
+7. Run the main program (`main.py`)
+
 
 ## Known Issues
 
